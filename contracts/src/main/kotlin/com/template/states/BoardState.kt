@@ -3,6 +3,8 @@ package com.template.states
 import com.template.contracts.TemplateContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.LinearState
+import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 
@@ -20,11 +22,13 @@ import net.corda.core.identity.Party
  */
 
 @BelongsToContract(TemplateContract::class)
-data class BoardState(val playerNought: Party,
+data class BoardState(//data class primary constructor must have properties declared as val
+                      val playerNought: Party,
                       val playerCross: Party,
                       val board: Array<Array<Symbol>> = Array(3) { Array(3) { Symbol.U} },
-                      val winner: Symbol = Symbol.U
-) : ContractState {
+                      val winner: Symbol = Symbol.U,
+                      override val linearId: UniqueIdentifier = UniqueIdentifier()
+) : LinearState {
 
     enum class Symbol {
         O, X, U // U for undefined
@@ -34,8 +38,15 @@ data class BoardState(val playerNought: Party,
     override val participants: List<AbstractParty> = listOf(playerNought,playerCross)
 
     //=============== METHODS ==================
-    fun writeSymbol(pos: Pair<Int,Int>, symbol: Symbol) {
-        board[pos.first][pos.second] = symbol
+    fun writeSymbol(pos: Pair<Int,Int>, symbol: Symbol): BoardState {
+        val newBoard = Array(3) {idx ->
+            if (idx == pos.first) Array(3) {idx ->
+                if (idx == pos.second) symbol
+                else Symbol.U
+            } else Array(3) {Symbol.U}
+        }
+        return copy(board = newBoard)
+
     }
 
     //============== intellij asked me to do this =====================
