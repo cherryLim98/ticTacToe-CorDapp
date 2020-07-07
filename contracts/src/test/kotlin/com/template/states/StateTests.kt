@@ -75,4 +75,14 @@ class StateTests {
         assertTrue { BoardState.Symbol.X in newBoard.board.flatten() }
         assertTrue { newBoard.board[1][2] == BoardState.Symbol.X }
     }
+
+    @Test
+    fun `writeSymbol() only replaces one symbol without affecting the rest of the board`() {
+        val boardOne = BoardState(alice,bob).writeSymbol(Pair(1,2), BoardState.Symbol.X).writeSymbol(Pair(1,0), BoardState.Symbol.O)
+        assertTrue { boardOne.board[1][2] == BoardState.Symbol.X }
+        assertTrue { boardOne.board[1][0] == BoardState.Symbol.O }
+        val boardTwo = boardOne.writeSymbol(Pair(1,2), BoardState.Symbol.O)
+        assertTrue { boardTwo.board[1][2] == BoardState.Symbol.O }
+        assertTrue { boardTwo.board[1][0] == BoardState.Symbol.O }
+    }
 }

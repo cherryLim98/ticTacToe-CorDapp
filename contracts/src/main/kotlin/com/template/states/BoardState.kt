@@ -1,12 +1,13 @@
 package com.template.states
 
-import com.template.contracts.TemplateContract
+import com.template.contracts.GameContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
+import net.corda.core.serialization.CordaSerializable
 
 /**
  * A Noughts and Crosses 3x3 board.
@@ -21,15 +22,16 @@ import net.corda.core.identity.Party
  *   0   1   2  x
  */
 
-@BelongsToContract(TemplateContract::class)
+@BelongsToContract(GameContract::class)
 data class BoardState(//data class primary constructor must have properties declared as val
                       val playerNought: Party,
                       val playerCross: Party,
-                      val board: Array<Array<Symbol>> = Array(3) { Array(3) { Symbol.U} },
+                      val board: Array<Array<Symbol>> = Array(3) { Array(3) { Symbol.U} }, // TODO kotlin neater 2d array? instead of array in array
                       val winner: Symbol = Symbol.U,
                       override val linearId: UniqueIdentifier = UniqueIdentifier()
 ) : LinearState {
 
+    @CordaSerializable
     enum class Symbol {
         O, X, U // U for undefined
     }
@@ -39,15 +41,15 @@ data class BoardState(//data class primary constructor must have properties decl
 
     //=============== METHODS ==================
     fun writeSymbol(pos: Pair<Int,Int>, symbol: Symbol): BoardState {
-        val newBoard = Array(3) {idx ->
-            if (idx == pos.first) Array(3) {idx ->
-                if (idx == pos.second) symbol
-                else Symbol.U
-            } else Array(3) {Symbol.U}
+        val newBoard = Array(3) {i ->
+            if (i == pos.first) Array(3) {j ->
+                if (j == pos.second) symbol
+                else board[i][j]
+            } else board[i]
         }
         return copy(board = newBoard)
-
     }
+    // arrayOf of mutableListOf
 
     //============== intellij asked me to do this =====================
     override fun equals(other: Any?): Boolean {
