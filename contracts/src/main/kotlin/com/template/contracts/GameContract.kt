@@ -22,12 +22,24 @@ class GameContract : Contract {
             is Commands.Create -> requireThat {
                 "No input states should be consumed when creating a game" using (tx.inputs.isEmpty())
                 "There should be just one output state in game creation" using (tx.outputs.size==1)
-                val board = tx.outputsOfType<BoardState>().single() // additional check for single BoardState output
-                "The players on the board must be different identities" using (board.playerNought != board.playerCross)
-                "Create transaction signers must be both the players on the board and only them" using (command.signers.toSet() == board.participants.map { it.owningKey }.toSet())
+                val state = tx.outputsOfType<BoardState>().single() // additional check for single BoardState output
+                "The players on the board must be different identities" using (state.playerX != state.playerO)
+                "Create transaction signers must be both the players on the board and only them" using (command.signers.toSet() == state.participants.map { it.owningKey }.toSet())
+                "There must be no winner" using (state.winner == BoardState.Symbol.U)
             }
             is Commands.Play -> requireThat {
-
+                "There must be one input state" using (tx.inputs.size==1)
+                "There must be one output state" using (tx.outputs.size==1)
+                val input = tx.inputsOfType<BoardState>().single()
+                val output = tx.outputsOfType<BoardState>().single()
+                "Players and linearID must not change" using (input.playerX == output.playerX && input.playerO == output.playerO && input.linearId == output.linearId)
+                "You must place a symbol on a blank slot" using (output.board.count { it == BoardState.Symbol.U } < input.board.count { it == BoardState.Symbol.U })
+                val symbolThisTurn = BoardState.getSymbolAdded(input.board,output.board)
+                "Player must play only the symbol they were assigned to" using (
+                        if (output.whoseTurn == output.playerX) symbolThisTurn == BoardState.Symbol.X
+                        else symbolThisTurn == BoardState.Symbol.O
+                        )
+                "playerX and playerO must alternate turns" using (input.whoseTurn != output.whoseTurn)
             }
         }
     }

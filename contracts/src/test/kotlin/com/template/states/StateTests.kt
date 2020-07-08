@@ -4,7 +4,6 @@ import net.corda.core.contracts.LinearState
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.testing.core.TestIdentity
-import net.corda.testing.node.MockServices
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -25,12 +24,12 @@ class StateTests {
 
     @Test
     fun `BoardState has player fields of correct type`() {
-        // Do the fields playerNought and playerCross exist?
-        BoardState::class.java.getDeclaredField("playerNought");
-        BoardState::class.java.getDeclaredField("playerCross");
+        // Do the fields playerX and playerO exist?
+        BoardState::class.java.getDeclaredField("playerX");
+        BoardState::class.java.getDeclaredField("playerO");
         // Are those fields of the correct type?
-        assertEquals(BoardState::class.java.getDeclaredField("playerNought").type, Party::class.java);
-        assertEquals(BoardState::class.java.getDeclaredField("playerCross").type, Party::class.java);
+        assertEquals(BoardState::class.java.getDeclaredField("playerX").type, Party::class.java);
+        assertEquals(BoardState::class.java.getDeclaredField("playerO").type, Party::class.java);
     }
 
     @Test
@@ -44,7 +43,7 @@ class StateTests {
     }
 
     @Test
-    fun `playerNought and playerCross are participants`() {
+    fun `playerX and playerO are participants`() {
         val boardState = BoardState(alice,bob)
         assertNotEquals(-1, boardState.participants.indexOf(alice))
         assertNotEquals(-1, boardState.participants.indexOf(bob))
@@ -53,14 +52,14 @@ class StateTests {
     @Test
     fun `BoardState fields are ordered correctly`() {
         val fields = BoardState::class.java.declaredFields
-        val playerNoughtIdx = fields.indexOf(BoardState::class.java.getDeclaredField("playerNought"))
-        val playerCrossIdx = fields.indexOf(BoardState::class.java.getDeclaredField("playerCross"))
+        val playerXIdx = fields.indexOf(BoardState::class.java.getDeclaredField("playerX"))
+        val playerOIdx = fields.indexOf(BoardState::class.java.getDeclaredField("playerO"))
         val boardIdx = fields.indexOf(BoardState::class.java.getDeclaredField("board"))
         val winnerIdx = fields.indexOf(BoardState::class.java.getDeclaredField("winner"))
         val linearIdIdx = fields.indexOf(BoardState::class.java.getDeclaredField("linearId"))
 
-        assert(playerNoughtIdx < playerCrossIdx)
-        assert(playerCrossIdx < boardIdx)
+        assert(playerXIdx < playerOIdx)
+        assert(playerOIdx < boardIdx)
         assert(boardIdx < winnerIdx)
         assert(winnerIdx < linearIdIdx)
     }
