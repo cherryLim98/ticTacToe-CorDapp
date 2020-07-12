@@ -21,38 +21,32 @@ import java.lang.IllegalArgumentException
 // *********
 @InitiatingFlow
 @StartableByRPC
-class CreateFlow(val state: BoardState
+class CreateFlow(val opponent: Party
 )
     : FlowLogic<SignedTransaction>() {
     override val progressTracker = ProgressTracker()
 
     @Suspendable
     override fun call(): SignedTransaction {
-        // Initiator flow logic goes here.
-        // Step 1. Get a reference to the notary service on our network and our key pair.
-        // Note: ongoing work to support multiple notary identities is still in progress.
+        val state = BoardState(ourIdentity, opponent)
+        val queryCriteria = QueryCriteria.LinearStateQueryCriteria(exactParticipants = listOf(ourIdentity, opponent))
+        val boardStatesWithUsTwo = serviceHub.vaultService.queryBy<BoardState>(queryCriteria).states
+        if (boardStatesWithUsTwo.isNotEmpty()) {
+            throw IllegalArgumentException("You can only have one ongoing game with your chosen player at a time")
+        }
+        // build transaction
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
-
-        // Step 2. Create a new issue command.
-        // Remember that a command is a CommandData object and a list of CompositeKeys
         val command = Command(GameContract.Commands.Create(), state.participants.map { it.owningKey })
-
-        // Step 3. Create a new TransactionBuilder object.
-        val builder = TransactionBuilder(notary = notary)
-
-        // Step 4. Add the iou as an output state, as well as a command to the transaction builder.
-        builder.addOutputState(state, GameContract.ID)
+        val builder = TransactionBuilder(notary)
+        builder.addOutputState(state, GameContract.ID) // addOutputState() requires a notary idk why
         builder.addCommand(command)
-
-        // Step 5. Verify and sign it with our KeyPair.
+        // Step 5. Verify with contract
         builder.verify(serviceHub)
+        // all the signing
         val ptx = serviceHub.signInitialTransaction(builder)
-
         val sessions = (state.participants - ourIdentity).map { initiateFlow(it) }.toSet()
-        // Step 6. Collect the other party's signature using the SignTransactionFlow.
         val stx = subFlow(CollectSignaturesFlow(ptx, sessions))
-
-        // Step 7. Assuming no exceptions, we can now finalise the transaction.
+        // check with notary
         return subFlow(FinalityFlow(stx, sessions))
     }
 }

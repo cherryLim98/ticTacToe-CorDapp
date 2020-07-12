@@ -25,12 +25,12 @@ class GameContract : Contract {
                 val state = tx.outputsOfType<BoardState>().single() // additional check for single BoardState output
                 "The players on the board must be different identities" using (state.playerX != state.playerO)
                 "Create transaction signers must be both the players on the board and only them" using (command.signers.toSet() == state.participants.map { it.owningKey }.toSet())
-                "There must be no winner" using (state.winner == BoardState.Symbol.U)
+                "There must be no winner" using (state.outcome == "game still in progress")
             }
             is Commands.Play -> requireThat {
                 "There must be one input state" using (tx.inputs.size==1)
-                "There must be one output state" using (tx.outputs.size==1)
                 val input = tx.inputsOfType<BoardState>().single()
+                "You cannot play further on a game that has reached a draw or has been won." using (BoardState.checkOutcome(input.board)== BoardState.Outcome.IN_PROGRESS)
                 val output = tx.outputsOfType<BoardState>().single()
                 "Players and linearID must not change" using (input.playerX == output.playerX && input.playerO == output.playerO && input.linearId == output.linearId)
                 "You must place a symbol on a blank slot" using (output.board.count { it == BoardState.Symbol.U } < input.board.count { it == BoardState.Symbol.U })
@@ -41,12 +41,19 @@ class GameContract : Contract {
                         )
                 "playerX and playerO must alternate turns" using (input.whoseTurn != output.whoseTurn)
             }
+            is Commands.EndGame -> requireThat {
+                "There must be one input state" using (tx.inputs.size==1)
+                "There must be no output state" using (tx.outputStates.isEmpty())
+                val input = tx.inputsOfType<BoardState>().single()
+                "You should only end the game after someone has won or a draw has occurred" using (BoardState.checkOutcome(input.board) != BoardState.Outcome.IN_PROGRESS)
+            }
         }
     }
 
     // Used to indicate the transaction's intent.
     interface Commands : CommandData {
-        class Create : TypeOnlyCommandData(), Commands // do we need TypeOnlyCommandDta? TypeOnlyCommandData is a helpful utility for the case when there’s no data inside the command; only the existence matters.
+        class Create :  Commands // do we need TypeOnlyCommandDta? TypeOnlyCommandData is a helpful utility for the case when there’s no data inside the command; only the existence matters.
         class Play : Commands // place a symbol. needs arguments
+        class EndGame: Commands
     }
 }

@@ -20,7 +20,8 @@ import net.corda.core.serialization.CordaSerializable
  * 0  _0   _1   _2
  *    0    1    2  x
  *
- *   array index = x + 3y
+ *    idx = x + 3y
+ *    x = idx % 3; y = (idx - x) / 3
  */
 
 @BelongsToContract(GameContract::class)
@@ -28,76 +29,85 @@ data class BoardState(//data class primary constructor must have properties decl
         val playerX: Party,
         val playerO: Party,
         val board: Array<Symbol> = Array(9) {  Symbol.U },
-                      //val board: Array<Array<Symbol>> = Array(3) { Array(3) { Symbol.U} },
         val whoseTurn: Party? = null,
-                      /*val posPlayedThisTurn: Pair<Int,Int>, // pair(x,y)
-                      val symbolPlayedThisTurn: Symbol = Symbol.X, */
-        val winner: Symbol = Symbol.U,
+        val outcome: String = "game still in progress", // TODO find a better data type for this
         override val linearId: UniqueIdentifier = UniqueIdentifier()
 ) : LinearState {
 
+    // ============ FIELDS ================
+    override val participants: List<AbstractParty> = listOf(playerX,playerO)
+
     @CordaSerializable
     enum class Symbol {
-        O, X, U // U for undefined
+        O, X, U // U for blank
+    }
+    @CordaSerializable
+    enum class Outcome {
+        X_WINS, O_WINS, DRAW, IN_PROGRESS
     }
 
     companion object {
+        // ========================= STATIC METHODS ===============================
         fun getSymbolAdded(oldBoard: Array<Symbol>, newBoard: Array<Symbol>) : Symbol {
             for (i in 0..8) {
                 if (oldBoard[i] == Symbol.U && newBoard[i] != oldBoard[i]) return newBoard[i]
             }
             return Symbol.U
         }
-        fun getChangedPos(oldBoard: Array<Symbol>, newBoard: Array<Symbol>) : Pair<Int,Int> {
-            for (i in 0..8) {
-                if (oldBoard[i] == Symbol.U && newBoard[i] != oldBoard[i]) {
-                    val x = i % 3
-                    val y = (i - x) / 3
-                    return Pair(x,y)
+        fun checkOutcome(board: Array<Symbol>) : Outcome {
+            // find a group of positions where all marks are the same
+            for (triple in winningTriples()) {
+                var threeMatchingNonBlankSymbols = true // remains true if the symbols at all positions in this group on the grid are the same
+                val first: Symbol = board[triple.first] // record char at first position in the group
+                for (winIdx in triple.toList()) {
+                    val symbol: Symbol = board[winIdx]
+                    // ensure mark at every position in this group matches the first
+                    if (symbol == Symbol.U || symbol != first) {
+                        threeMatchingNonBlankSymbols = false
+                        break
+                    }
+                }
+                if (threeMatchingNonBlankSymbols) { // if the marks at all positions in this group match, it means this symbol has won
+                    return if (first == Symbol.X) Outcome.X_WINS
+                    else Outcome.O_WINS
                 }
             }
-            return Pair(-1,-1)
+            // if no winning symbol is found
+            return if (board.count { it==Symbol.U } == 0) Outcome.DRAW
+            else Outcome.IN_PROGRESS
+        }
+
+        private fun winningTriples() :  Array<Triple<Int,Int,Int>> {
+            var array = Array<Triple<Int,Int,Int>>(8) {Triple(-1,-1,-1)}
+            array[0] = Triple(0,1,2)
+            array[1] = Triple(3,4,5)
+            array[2] = Triple(6,7,8)
+            array[3] = Triple(0,3,6)
+            array[4] = Triple(1,4,7)
+            array[5] = Triple(2,5,8)
+            array[6] = Triple(0,4,8)
+            array[7] = Triple(2,4,6)
+            return array
         }
     }
 
-    // ============ FIELDS ================
-    override val participants: List<AbstractParty> = listOf(playerX,playerO)
 
     //=============== METHODS ==================
-    /**
-    fun writeSymbol(pos: Pair<Int,Int>, symbol: Symbol): BoardState {
-        val newBoard = Array(3) {i ->
-            if (i == pos.first) Array(3) {j ->
-                if (j == pos.second) symbol
-                else board[i][j]
-            } else board[i]
-        }
-        return copy(board = newBoard)
-    }
-    // arrayOf of mutableListOf
-    */
-
-    fun writeSymbol(player:Party, pos: Pair<Int,Int> /*, symbol: Symbol*/): BoardState {
-        val symbol : Symbol = if (player==playerX) {
-            Symbol.X
-        }
-        else {
-            Symbol.O
-        }
+    fun writeSymbol(player:Party, pos: Pair<Int,Int>): BoardState {
+        val symbol : Symbol = if (player==playerX) Symbol.X else Symbol.O
         val newBoard = Array(9) { idx->
-            if (idx == pos.first + 3 * pos.second) symbol
+            if (idx == pos.first + 3 * pos.second && board[idx] == Symbol.U) symbol // if player maliciously tries to replace a non-blank symbol then the same board is returned
             else board[idx]
         }
         return copy(board = newBoard, whoseTurn = player)
     }
-
-
-
-    fun getFromBoard(pos:Pair<Int,Int>) : Symbol {
-        return board[pos.first + 3 * pos.second]
+    // only called if a Win or Draw occurs
+    fun updateOutcome(): BoardState {
+        val outcome = checkOutcome(board)
+        return copy(outcome = if (outcome == Outcome.X_WINS) "${playerX.name.commonName} wins" else if (outcome == Outcome.O_WINS) "${playerO.name.commonName} wins" else "Draw")
     }
 
-    fun replaceBoard(newBoard: Array<Symbol>) = copy(board = newBoard)
+
 
         //============== intellij asked me to do this =====================
         override fun equals(other: Any?): Boolean {
@@ -122,4 +132,5 @@ data class BoardState(//data class primary constructor must have properties decl
             return result
         }
 }
+
 

@@ -2,87 +2,94 @@ package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.GameContract
+import com.template.flows.GameOverFlow
 import com.template.states.BoardState
+import net.corda.core.contracts.Amount
 import net.corda.core.contracts.Command
-import net.corda.core.contracts.StateAndContract
 import net.corda.core.contracts.UniqueIdentifier
-import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
-import net.corda.core.utilities.ProgressTracker
-import java.lang.IllegalArgumentException
 
-// *********
-// * Flows *
-// *********
+/**
+ * This is the flow which handles the (partial) settlement of existing IOUs on the ledger.
+ * Gathering the counterparty's signature is handled by the [CollectSignaturesFlow].
+ * Notarisation (if required) and commitment to the ledger is handled by the [FinalityFlow].
+ * The flow returns the [SignedTransaction] that was committed to the ledger.
+ */
 @InitiatingFlow
 @StartableByRPC
-class PlayFlow(val linearId: UniqueIdentifier,
-               val pos: Pair<Int,Int>
-               )
-    : FlowLogic<SignedTransaction>() {
-    override val progressTracker = ProgressTracker()
+class PlayFlow(// val linearId: UniqueIdentifier,
+        val opponent: Party,
+        val pos: Pair<Int,Int>): FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        // Initiator flow logic goes here.
-        // Stage 1. Retrieve state specified by linearId from the vault.
-        val queryCriteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId))
-        val boardStateAndRef =  serviceHub.vaultService.queryBy<BoardState>(queryCriteria).states.single()
-        val input = boardStateAndRef.state.data
-        // this flow must be initiated by one of the players
+        // Step 1. Retrieve the state from the vault.
+        val queryCriteria = QueryCriteria.LinearStateQueryCriteria(exactParticipants = listOf(ourIdentity, opponent))
+        val inputStateAndRef = serviceHub.vaultService.queryBy<BoardState>(queryCriteria).states.single()
+        val input = inputStateAndRef.state.data
+        // flow initiation rules
         if (!input.participants.contains(ourIdentity)) {
-            throw IllegalArgumentException("Only one of the predefined players can play")
+            throw IllegalArgumentException("Only one of the state's participants can play")
         }
-        // this flow can only be initiated if the previous state was played on by the other player OR this is the first turn ever
         if (ourIdentity == input.whoseTurn) {
             throw IllegalArgumentException("The two players must alternate turns i.e. the same player cannot play twice in a row")
         }
-        // create new BoardState with this player's symbol written on the board
-        val output = input.writeSymbol(ourIdentity, pos)
-        // create the play command
-        val signers = input.participants.map { it.owningKey }
-        val playCommand = Command(GameContract.Commands.Play(), signers)
-        // Stage 5. Get a reference to a transaction builder.
+        // Step 3. Create a transaction builder.
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
-        val builder = TransactionBuilder(notary = notary)
-        // Stage 6. Create the transaction which comprises one input, one output and one command.
-        builder.withItems(boardStateAndRef,
-                StateAndContract(output, GameContract.ID),
-                playCommand)
-        // Stage 7. Verify and sign the transaction.
+        val builder = TransactionBuilder(notary)
+        val command = Command(GameContract.Commands.Play(), listOf(opponent.owningKey, ourIdentity.owningKey))
+        builder.addCommand(command)
+        builder.addInputState(inputStateAndRef)
+        // check if output state is a game-over
+        val output = input.writeSymbol(ourIdentity, pos)
+        val outcome = BoardState.checkOutcome(output.board)
+        if (outcome == BoardState.Outcome.IN_PROGRESS) { // game not over
+            builder.addOutputState(output, GameContract.ID)
+        }
+        else {
+            builder.addOutputState(output.updateOutcome(), GameContract.ID)
+        }
+        // Step 8. Verify and sign the transaction.
         builder.verify(serviceHub)
-        val ptx = serviceHub.signInitialTransaction(builder)
-
-        // Stage 8. Collect signature from the other player and add it to the transaction.
-        // This also verifies the transaction and checks the signatures.
-        val sessions = (input.participants - ourIdentity ).map { initiateFlow(it) }.toSet()
-        val stx = subFlow(CollectSignaturesFlow(ptx, sessions))
-
-        // Stage 9. Notarise and record the transaction in our vaults.
-        return subFlow(FinalityFlow(stx, sessions))
+        val ptx = serviceHub.signInitialTransaction(builder, ourIdentity.owningKey)
+        val session = initiateFlow(opponent)
+        val stx = subFlow(CollectSignaturesFlow(ptx, listOf(session))) // idk why CollectSignatureFlow (singular) doesnt return stx
+        val finalStx = subFlow(FinalityFlow(stx, session))
+        // if game over, start subflow that ends the game
+        return if (outcome == BoardState.Outcome.IN_PROGRESS) finalStx
+        else {
+            subFlow(GameOverFlow(opponent))
+            finalStx
+        }
     }
 }
 
+/**
+ * This is the flow which signs IOU settlements.
+ * The signing is handled by the [SignTransactionFlow].
+ */
 @InitiatedBy(PlayFlow::class)
-class PlayResponder(val session: FlowSession) : FlowLogic<SignedTransaction>() {
+class PlayResponder(val flowSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
-        // Responder flow logic goes here.
-        val signedTransactionFlow = object : SignTransactionFlow(session) {
-            override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                val output = stx.tx.outputs.single().data
-                "This must be a BoardState transaction" using (output is BoardState)
+
+        // signing transaction
+        val signedTransactionFlow = object : SignTransactionFlow(flowSession) {
+            override fun checkTransaction(stx: SignedTransaction) {
             }
         }
 
         val txWeJustSignedId = subFlow(signedTransactionFlow)
 
-        return subFlow(ReceiveFinalityFlow(otherSideSession = session, expectedTxId = txWeJustSignedId.id))
-
+        return subFlow(ReceiveFinalityFlow(otherSideSession = flowSession, expectedTxId = txWeJustSignedId.id))
     }
 }
+
+
+
+
