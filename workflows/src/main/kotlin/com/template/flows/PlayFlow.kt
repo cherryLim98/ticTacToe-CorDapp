@@ -2,11 +2,8 @@ package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.GameContract
-import com.template.flows.GameOverFlow
 import com.template.states.BoardState
-import net.corda.core.contracts.Amount
 import net.corda.core.contracts.Command
-import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -24,7 +21,10 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByRPC
 class PlayFlow(// val linearId: UniqueIdentifier,
         val opponent: Party,
-        val pos: Pair<Int,Int>): FlowLogic<SignedTransaction>() {
+//        val pos: Pair<Int,Int>
+        val x: Int,
+        val y: Int
+): FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
@@ -46,6 +46,7 @@ class PlayFlow(// val linearId: UniqueIdentifier,
         builder.addCommand(command)
         builder.addInputState(inputStateAndRef)
         // check if output state is a game-over
+        val pos = Pair(x,y)
         val output = input.writeSymbol(ourIdentity, pos)
         val outcome = BoardState.checkOutcome(output.board)
         if (outcome == BoardState.Outcome.IN_PROGRESS) { // game not over

@@ -7,6 +7,7 @@ import com.template.flows.PlayResponder
 import com.template.states.BoardState
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
@@ -20,6 +21,7 @@ import net.corda.testing.node.TestCordapp
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -57,7 +59,7 @@ class PlayFlowTests {
 
     private fun executePlayTransaction(inTx: SignedTransaction, pos: Pair<Int,Int>, node: StartedMockNode) : SignedTransaction {
         val input = inTx.tx.outputs.single().data as BoardState
-        val flow = PlayFlow((input.participants-node.info.chooseIdentity()).single() as Party, pos)
+        val flow = PlayFlow((input.participants-node.info.chooseIdentity()).single() as Party, pos.first, pos.second)
         val future = node.startFlow(flow)
         network.runNetwork()
         return future.getOrThrow()
@@ -67,7 +69,7 @@ class PlayFlowTests {
     fun `non-participant cannot play a move`() {
         val bob = b.info.chooseIdentityAndCert().party
         aliceCreateGame(bob)
-        val flow = PlayFlow(bob, Pair(0,1))
+        val flow = PlayFlow(bob, 0, 1)
         val future = c.startFlow(flow)
         network.runNetwork()
         assertFailsWith<NoSuchElementException> { future.getOrThrow() } // actually fails with NoSuchElementException cuz the state doesn't exits in c's vault
@@ -78,7 +80,7 @@ class PlayFlowTests {
         val bob = b.info.chooseIdentityAndCert().party
         // first turn
         aliceCreateGame(bob)
-        val flow = PlayFlow(bob, Pair(0,1))
+        val flow = PlayFlow(bob, 0, 1)
         val future = a.startFlow(flow)
         network.runNetwork()
         // second turn
@@ -90,7 +92,7 @@ class PlayFlowTests {
         val bob = b.info.chooseIdentityAndCert().party
         // first turn
         aliceCreateGame(bob)
-        val flow = PlayFlow(bob, Pair(0,1))
+        val flow = PlayFlow(bob, 0, 1)
         val future = a.startFlow(flow)
         network.runNetwork()
         // second turn
@@ -98,7 +100,7 @@ class PlayFlowTests {
     }
 
     @Test
-    fun `State is removed from ledger when somebody wins`() {
+    fun `State is removed from ledger and made historical for both parties when somebody wins`() {
         val bob = b.info.chooseIdentityAndCert().party
         val stx = aliceCreateGame(bob)
         val stxB = executePlayTransaction(stx, Pair(0,0), a)
@@ -106,10 +108,15 @@ class PlayFlowTests {
         val stxD = executePlayTransaction(stxC, Pair(0,1), a)
         val stxE = executePlayTransaction(stxD, Pair(1,2), b)
         val stxF = executePlayTransaction(stxE, Pair(0,2), a)
-        // has the state chain ended?
+        // has the state chain ended for both parties
         val id = (stxF.tx.outputs.single().data as BoardState).linearId
-        val queryCriteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(id))
-        assertFailsWith<NoSuchElementException>{a.services.vaultService.queryBy<BoardState>(queryCriteria).states.single()}
+        val criteriaById = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(id))
+        assertFailsWith<NoSuchElementException>{a.services.vaultService.queryBy<BoardState>(criteriaById).states.single()}
+        assertFailsWith<NoSuchElementException>{b.services.vaultService.queryBy<BoardState>(criteriaById).states.single()}
+        // is there a correct number of consumed states for both parties
+        val criteriaByStateStatus = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.CONSUMED)
+        assert(a.services.vaultService.queryBy<BoardState>(criteriaByStateStatus).states.size == 6 )
+        assert(b.services.vaultService.queryBy<BoardState>(criteriaByStateStatus).states.size == 6 )
     }
 
     @Test
