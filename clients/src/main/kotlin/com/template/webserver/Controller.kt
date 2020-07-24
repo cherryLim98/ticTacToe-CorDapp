@@ -7,12 +7,14 @@ import net.corda.core.contracts.Amount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.crypto.newSecureRandom
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
 import net.corda.core.messaging.startTrackedFlow
 import net.corda.core.messaging.vaultQueryBy
 import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
@@ -38,6 +40,7 @@ class Controller(rpc: NodeRPCConnection) {
     companion object {
         private val logger = LoggerFactory.getLogger(RestController::class.java)
     }
+    private val me = rpc.proxy.nodeInfo().legalIdentities.first()
     private val myLegalName = rpc.proxy.nodeInfo().legalIdentities.first().name
     private val proxy = rpc.proxy
 
@@ -98,9 +101,19 @@ class Controller(rpc: NodeRPCConnection) {
         val opponentString = request.getParameter("opponent")
         val pos = request.getParameter("pos").toInt()
         val opponent = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(opponentString)) ?: throw IllegalArgumentException("Unknown party name.")
+        val queryCriteria = QueryCriteria.LinearStateQueryCriteria(exactParticipants = listOf(me, opponent))
+        val stateRef = proxy.vaultQueryBy<BoardState>(queryCriteria).states.single()
+        val newState = stateRef.state.data.writeSymbol(me, pos)
         return try {
             proxy.startFlow(::PlayFlow, opponent, pos).returnValue.get()
-            ResponseEntity.status(HttpStatus.CREATED).body("You played the position ($pos) against ${opponent.name}.")
+            if ((newState.playerX==me && BoardState.checkOutcome(newState.board)==BoardState.Outcome.X_WINS) || (newState.playerO==me && BoardState.checkOutcome(newState.board)==BoardState.Outcome.O_WINS)) {
+                System.out.println("corgi")
+                ResponseEntity.status(HttpStatus.CREATED).body("win"/*"You played the position ($pos) against ${opponent.name}. You have won! Yippee!"*/)
+            } else if (BoardState.checkOutcome(newState.board)==BoardState.Outcome.DRAW) {
+                ResponseEntity.status(HttpStatus.CREATED).body("You played the position ($pos) against ${opponent.name}. You have reached a draw.")
+            } else {
+                ResponseEntity.status(HttpStatus.CREATED).body("You played the position ($pos) against ${opponent.name}.")
+            }
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         }

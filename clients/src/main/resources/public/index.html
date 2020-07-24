@@ -58,66 +58,66 @@
 <script type="text/ng-template" id="playModal.html">
     <div class="modal-header">
         <h4 class="modal-title">Place your symbol on a blank spot</h4>
-        <div class="modal-body">
-            <!-- taken from https://dev.to/ayushmanbthakur/how-to-make-tic-tac-toe-in-browser-with-html-css-and-js-28ed -->
-            <div class="play-area">
-                <div id="block_0" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[0]!='U'">{{playModal.game.board[0]}}</div>
-                    <div ng-if="playModal.game.board[0]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="0">
-                    </div>
+    </div>
+    <div class="modal-body">
+        <!-- taken from https://dev.to/ayushmanbthakur/how-to-make-tic-tac-toe-in-browser-with-html-css-and-js-28ed -->
+        <div class="play-area">
+            <div id="block_0" class="block">
+                <div class="symbol" ng-if="playModal.game.board[0]!='U'">{{playModal.game.board[0]}}</div>
+                <div ng-if="playModal.game.board[0]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="0">
                 </div>
-                <div id="block_1" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[1]!='U'">{{playModal.game.board[1]}}</div>
-                    <div ng-if="playModal.game.board[1]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="1">
-                    </div>
-                </div>
-                <div id="block_2" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[2]!='U'">{{playModal.game.board[2]}}</div>
-                    <div ng-if="playModal.game.board[2]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="2">
-                    </div>
-                </div>
-
-                <div id="block_3" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[3]!='U'">{{playModal.game.board[3]}}</div>
-                    <div ng-if="playModal.game.board[3]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="3">
-                    </div>
-                </div>
-                <div id="block_4" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[4]!='U'">{{playModal.game.board[4]}}</div>
-                    <div ng-if="playModal.game.board[4]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="4">
-                    </div>
-                </div>
-                <div id="block_5" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[5]!='U'">{{playModal.game.board[5]}}</div>
-                    <div ng-if="playModal.game.board[5]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="5">
-                    </div>
-                </div>
-                <div id="block_6" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[6]!='U'">{{playModal.game.board[6]}}</div>
-                    <div ng-if="playModal.game.board[6]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="6">
-                    </div>
-                </div>
-                <div id="block_7" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[7]!='U'">{{playModal.game.board[7]}}</div>
-                    <div ng-if="playModal.game.board[7]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="7">
-                    </div>
-                </div>
-                <div id="block_8" class="block">
-                    <div class="symbol" ng-if="playModal.game.board[8]!='U'">{{playModal.game.board[8]}}</div>
-                    <div ng-if="playModal.game.board[8]=='U'">
-                        <input name="pos" type="radio" ng-model="playModal.pos" value="8">
-                    </div>
-                </div>
-
             </div>
+            <div id="block_1" class="block">
+                <div class="symbol" ng-if="playModal.game.board[1]!='U'">{{playModal.game.board[1]}}</div>
+                <div ng-if="playModal.game.board[1]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="1">
+                </div>
+            </div>
+            <div id="block_2" class="block">
+                <div class="symbol" ng-if="playModal.game.board[2]!='U'">{{playModal.game.board[2]}}</div>
+                <div ng-if="playModal.game.board[2]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="2">
+                </div>
+            </div>
+
+            <div id="block_3" class="block">
+                <div class="symbol" ng-if="playModal.game.board[3]!='U'">{{playModal.game.board[3]}}</div>
+                <div ng-if="playModal.game.board[3]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="3">
+                </div>
+            </div>
+            <div id="block_4" class="block">
+                <div class="symbol" ng-if="playModal.game.board[4]!='U'">{{playModal.game.board[4]}}</div>
+                <div ng-if="playModal.game.board[4]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="4">
+                </div>
+            </div>
+            <div id="block_5" class="block">
+                <div class="symbol" ng-if="playModal.game.board[5]!='U'">{{playModal.game.board[5]}}</div>
+                <div ng-if="playModal.game.board[5]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="5">
+                </div>
+            </div>
+            <div id="block_6" class="block">
+                <div class="symbol" ng-if="playModal.game.board[6]!='U'">{{playModal.game.board[6]}}</div>
+                <div ng-if="playModal.game.board[6]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="6">
+                </div>
+            </div>
+            <div id="block_7" class="block">
+                <div class="symbol" ng-if="playModal.game.board[7]!='U'">{{playModal.game.board[7]}}</div>
+                <div ng-if="playModal.game.board[7]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="7">
+                </div>
+            </div>
+            <div id="block_8" class="block">
+                <div class="symbol" ng-if="playModal.game.board[8]!='U'">{{playModal.game.board[8]}}</div>
+                <div ng-if="playModal.game.board[8]=='U'">
+                    <input name="pos" type="radio" ng-model="playModal.pos" value="8">
+                </div>
+            </div>
+
         </div>
     </div>
     <div class="modal-footer">
@@ -125,10 +125,20 @@
         <button ng-click="playModal.play()" type="button" class="btn btn-primary">Place Your Symbol</button>
     </div>
 </script>
-<!-- Idk what this is -->
+<!--  small popup messages modal -->
 <script type="text/ng-template" id="messageContent.html">
     <div class="modal-body" id="modal-body">
         {{ modalInstanceTwo.message }}
+    </div>
+</script>
+<!-- congrats modal -->
+<script type="text/ng-template" id="congratsModal.html">
+    <div class="modal-body">
+        <img src="https://media.giphy.com/media/100QWMdxQJzQC4/giphy.gif">
+        <h3>You won! Great job \(^.^)/ </h3>
+    </div>
+    <div class="modal-footer">
+        <button ng-click="congratsModal.close()" type="button" class="btn btn-default">Close</button>
     </div>
 </script>
 <!-- Display active games -->
