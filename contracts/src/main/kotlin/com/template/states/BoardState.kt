@@ -93,18 +93,19 @@ data class BoardState(//data class primary constructor must have properties decl
 
 
     //=============== METHODS ==================
-    fun writeSymbol(player:Party, pos: Pair<Int,Int>): BoardState {
+    fun writeSymbol(player:Party, idx:Int /*pos: Pair<Int,Int>*/): BoardState {
         val symbol : Symbol = if (player==playerX) Symbol.X else Symbol.O
-        val newBoard = Array(9) { idx->
-            if (idx == pos.first + 3 * pos.second && board[idx] == Symbol.U) symbol // if player maliciously tries to replace a non-blank symbol then the same board is returned
-            else board[idx]
+        val newBoard = Array(9) { i->
+//            if (idx == pos.first + 3 * pos.second && board[idx] == Symbol.U) symbol // if player maliciously tries to replace a non-blank symbol then the same board is returned
+            if (i==idx && board[i]==Symbol.U) symbol
+            else board[i]
         }
         return copy(board = newBoard, whoseTurn = player)
     }
     // only called if a Win or Draw occurs
     fun updateOutcome(): BoardState {
         val outcome = checkOutcome(board)
-        return copy(outcome = if (outcome == Outcome.X_WINS) "${playerX.name.commonName} wins" else if (outcome == Outcome.O_WINS) "${playerO.name.commonName} wins" else "Draw")
+        return copy(outcome = if (outcome == Outcome.X_WINS) "${playerX.name} wins" else if (outcome == Outcome.O_WINS) "${playerO.name} wins" else "Draw")
     }
 
 

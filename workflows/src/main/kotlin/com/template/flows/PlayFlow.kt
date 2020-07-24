@@ -22,8 +22,9 @@ import net.corda.core.transactions.TransactionBuilder
 class PlayFlow(// val linearId: UniqueIdentifier,
         val opponent: Party,
 //        val pos: Pair<Int,Int>
-        val x: Int,
-        val y: Int
+//        val x: Int,
+//        val y: Int
+val pos: Int
 ): FlowLogic<SignedTransaction>() {
 
     @Suspendable
@@ -37,7 +38,7 @@ class PlayFlow(// val linearId: UniqueIdentifier,
             throw IllegalArgumentException("Only one of the state's participants can play")
         }
         if (ourIdentity == input.whoseTurn) {
-            throw IllegalArgumentException("The two players must alternate turns i.e. the same player cannot play twice in a row")
+            throw IllegalArgumentException("The two players must alternate turns i.e. the same player cannot play twice in a row") // TODO dont print entire stack trace in log, message to user
         }
         // Step 3. Create a transaction builder.
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -46,7 +47,7 @@ class PlayFlow(// val linearId: UniqueIdentifier,
         builder.addCommand(command)
         builder.addInputState(inputStateAndRef)
         // check if output state is a game-over
-        val pos = Pair(x,y)
+//        val pos = Pair(x,y)
         val output = input.writeSymbol(ourIdentity, pos)
         val outcome = BoardState.checkOutcome(output.board)
         if (outcome == BoardState.Outcome.IN_PROGRESS) { // game not over
@@ -82,6 +83,9 @@ class PlayResponder(val flowSession: FlowSession): FlowLogic<SignedTransaction>(
         // signing transaction
         val signedTransactionFlow = object : SignTransactionFlow(flowSession) {
             override fun checkTransaction(stx: SignedTransaction) {
+                //TODO
+//                val contract = GameContract()
+//                contract.verify(stx.toLedgerTransaction(serviceHub))
             }
         }
 

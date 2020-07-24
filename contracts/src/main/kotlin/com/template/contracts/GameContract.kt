@@ -33,7 +33,7 @@ class GameContract : Contract {
                 "You cannot play further on a game that has reached a draw or has been won." using (BoardState.checkOutcome(input.board)== BoardState.Outcome.IN_PROGRESS)
                 val output = tx.outputsOfType<BoardState>().single()
                 "Players and linearID must not change" using (input.playerX == output.playerX && input.playerO == output.playerO && input.linearId == output.linearId)
-                "You must place a symbol on a blank slot" using (output.board.count { it == BoardState.Symbol.U } < input.board.count { it == BoardState.Symbol.U })
+                "You must place a symbol on one blank slot" using (output.board.count { it == BoardState.Symbol.U } == input.board.count { it == BoardState.Symbol.U } - 1)
                 val symbolThisTurn = BoardState.getSymbolAdded(input.board,output.board)
                 "Player must play only the symbol they were assigned to" using (
                         if (output.whoseTurn == output.playerX) symbolThisTurn == BoardState.Symbol.X

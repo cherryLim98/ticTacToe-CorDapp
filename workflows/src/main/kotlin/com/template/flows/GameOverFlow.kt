@@ -33,7 +33,7 @@ class GameOverFlow(val opponent: Party
         // sign
         val ptx = serviceHub.signInitialTransaction(builder, input.playerX.owningKey)
         val session = initiateFlow(input.playerO)
-        val stx = subFlow(CollectSignaturesFlow(ptx, listOf(session)))
+        val stx = subFlow(CollectSignaturesFlow(ptx, listOf(session))) // session not necessary
 //        val stx = serviceHub.addSignature(ptx, input.playerO.owningKey) // i'm guessing can't do this cuz playerO is not us. but who is us??
         // finalize with notary
         return subFlow(FinalityFlow(stx, session))

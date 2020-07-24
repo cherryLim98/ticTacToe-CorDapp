@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html ng-app="app" ng-controller="Controller as controller">
+<head>
+    <meta charset="UTF-8">
+    <title>TicTacToe CorDapp</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0-rc.1/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.2.0/ui-bootstrap-tpls.min.js"></script>
+    <link rel="stylesheet" href="css/stylesheet.css"/>
+    <script src="js/angular-module.js"></script>
+</head>
+<body ng-app="app" ng-controller="Controller as controller">
+<!--===================== START OF BODY======================-->
+<!--Nav -->
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">{{controller.thisNode}}</a>
+        </div>
+        <button ng-click="controller.openCreateModal()" type="button" class="btn btn-primary navbar-btn">Create Game</button>
+    </div>
+</nav>
+<!-- Create Game Modal -->
+<script type="text/ng-template" id="createModal.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Create new game</h4>
+    </div>
+    <form>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="opponent" class="control-label">Opponent:</label>
+                <select ng-model="createModal.form.opponent" class="form-control" id="opponent"
+                    ng-options="peer as peer for peer in createModal.peers">
+                </select>
+            </div>
+            <div ng-show="createModal.formError" class="form-group">
+                <div class="alert alert-danger" role="alert">
+                    <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                    <span class="sr-only">Error:</span>
+                    Please select a valid opponent
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button ng-click="createModal.cancel()" type="button" class="btn btn-default">Cancel</button>
+            <button ng-click="createModal.create()" type="button" class="btn btn-primary">Create Game</button>
+        </div>
+    </form>
+</script>
+<!-- Play Modal. Board for player to place symbol on -->
+<script type="text/ng-template" id="playModal.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Place your symbol on a blank spot</h4>
+        <div class="modal-body">
+            <!-- taken from https://dev.to/ayushmanbthakur/how-to-make-tic-tac-toe-in-browser-with-html-css-and-js-28ed -->
+            <div class="play-area">
+                <div id="block_0" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[0]!='U'">{{playModal.game.board[0]}}</div>
+                    <div ng-if="playModal.game.board[0]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="0">
+                    </div>
+                </div>
+                <div id="block_1" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[1]!='U'">{{playModal.game.board[1]}}</div>
+                    <div ng-if="playModal.game.board[1]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="1">
+                    </div>
+                </div>
+                <div id="block_2" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[2]!='U'">{{playModal.game.board[2]}}</div>
+                    <div ng-if="playModal.game.board[2]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="2">
+                    </div>
+                </div>
+
+                <div id="block_3" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[3]!='U'">{{playModal.game.board[3]}}</div>
+                    <div ng-if="playModal.game.board[3]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="3">
+                    </div>
+                </div>
+                <div id="block_4" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[4]!='U'">{{playModal.game.board[4]}}</div>
+                    <div ng-if="playModal.game.board[4]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="4">
+                    </div>
+                </div>
+                <div id="block_5" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[5]!='U'">{{playModal.game.board[5]}}</div>
+                    <div ng-if="playModal.game.board[5]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="5">
+                    </div>
+                </div>
+                <div id="block_6" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[6]!='U'">{{playModal.game.board[6]}}</div>
+                    <div ng-if="playModal.game.board[6]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="6">
+                    </div>
+                </div>
+                <div id="block_7" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[7]!='U'">{{playModal.game.board[7]}}</div>
+                    <div ng-if="playModal.game.board[7]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="7">
+                    </div>
+                </div>
+                <div id="block_8" class="block">
+                    <div class="symbol" ng-if="playModal.game.board[8]!='U'">{{playModal.game.board[8]}}</div>
+                    <div ng-if="playModal.game.board[8]=='U'">
+                        <input name="pos" type="radio" ng-model="playModal.pos" value="8">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button ng-click="playModal.cancel()" type="button" class="btn btn-default">Cancel</button>
+        <button ng-click="playModal.play()" type="button" class="btn btn-primary">Place Your Symbol</button>
+    </div>
+</script>
+<!-- Idk what this is -->
+<script type="text/ng-template" id="messageContent.html">
+    <div class="modal-body" id="modal-body">
+        {{ modalInstanceTwo.message }}
+    </div>
+</script>
+<!-- Display active games -->
+<div class="row" >
+    <div class="col-md-12"><h3>Active Games</h3></div>
+    <div class="col-md-12 nodata" style="font-size:20px;" ng-show="!controller.activeGames.length">Use the "Create Game" button to create a new game.</div>
+    <div class="col-md-3" ng-repeat="game in controller.activeGames">
+        <div class="box-wrapper">
+            <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #EEEEEE">
+                <div ng-if="game.playerX.includes(controller.thisNode)">
+                    <div><h4>Game against {{game.playerO}}</h4></div>
+                    <div>Player X: You</div>
+                    <div>Player O: {{game.playerO}}</div>
+                    <div>Who played last: {{game.whoseTurn}}</div>
+                    <button class="btn btn-primary" ng-click="controller.openPlayModal(game, game.playerO)">View</button>
+                </div>
+                <div ng-if="game.playerO.includes(controller.thisNode)">
+                    <div><h4>Game against {{game.playerX}}</h4></div>
+                    <div>Player X: {{game.playerX}}</div>
+                    <div>Player O: You</div>
+                    <div>Who played last: {{game.whoseTurn}}</div>
+                    <button class="btn btn-primary" ng-click="controller.openPlayModal(game, game.playerX)">View</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--================== END OF BODY ====================== -->
+</body>
+</html>

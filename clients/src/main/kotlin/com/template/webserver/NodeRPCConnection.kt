@@ -15,14 +15,14 @@ private const val CORDA_NODE_HOST = "config.rpc.host"
 private const val CORDA_RPC_PORT = "config.rpc.port"
 
 /**
- * Wraps an RPC connection to a Corda node.
+ * Wraps a node RPC proxy.
  *
- * The RPC connection is configured using command line arguments.
+ * The RPC proxy is configured based on the properties in `application.properties`.
  *
- * @param host The host of the node we are connecting to.
- * @param rpcPort The RPC port of the node we are connecting to.
- * @param username The username for logging into the RPC client.
- * @param password The password for logging into the RPC client.
+ * @property host The host of the node we are connecting to.
+ * @property rpcPort The RPC port of the node we are connecting to.
+ * @property username The username for logging into the RPC client.
+ * @property password The password for logging into the RPC client.
  * @property proxy The RPC proxy.
  */
 @Component
@@ -30,7 +30,7 @@ open class NodeRPCConnection(
         @Value("\${$CORDA_NODE_HOST}") private val host: String,
         @Value("\${$CORDA_USER_NAME}") private val username: String,
         @Value("\${$CORDA_USER_PASSWORD}") private val password: String,
-        @Value("\${$CORDA_RPC_PORT}") private val rpcPort: Int): AutoCloseable {
+        @Value("\${$CORDA_RPC_PORT}") private val rpcPort: Int) {
 
     lateinit var rpcConnection: CordaRPCConnection
         private set
@@ -39,14 +39,19 @@ open class NodeRPCConnection(
 
     @PostConstruct
     fun initialiseNodeRPCConnection() {
-            val rpcAddress = NetworkHostAndPort(host, rpcPort)
-            val rpcClient = CordaRPCClient(rpcAddress)
-            val rpcConnection = rpcClient.start(username, password)
-            proxy = rpcConnection.proxy
+
+        val rpcAddress = NetworkHostAndPort(host, rpcPort)
+        val rpcClient = CordaRPCClient(rpcAddress)
+        val rpcConnection = rpcClient.start(username, password)
+        proxy = rpcConnection.proxy
     }
 
     @PreDestroy
-    override fun close() {
+    fun close() {
         rpcConnection.notifyServerAndClose()
     }
+
+
+
+
 }
