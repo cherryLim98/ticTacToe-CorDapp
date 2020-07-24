@@ -27,22 +27,22 @@
 
 .block:hover {
   cursor: pointer;
-  background: #0ff30f;
+  background: #FFB6C1;
 }
 
 .occupied:hover {
   background: #ff3a3a;
 }
 .symbol {
-    font-size: 18px;
+    font-size: 24px;
     font-weight: bold;
 }
 
-#block_0,#block_1,#block_2 {
+#block_6,#block_7,#block_8 {
 border-bottom: none;
 }
 
-#block_6,#block_7,#block_8 {
+#block_0,#block_1,#block_2{
    border-top: none;
 }
 

@@ -49,7 +49,14 @@ app.controller('Controller', function($http, $location, $uibModal) {
             .map((key) => response.data[key].state.data)
             .reverse());
 
+    app.getPastGames = () => $http.get(apiBaseURL + "pastGames")
+            .then((response) => app.pastGames = Object.keys(response.data)
+                .map((key) => response.data[key].state.data)
+                .reverse());
+
+    // update data
     app.getActiveGames();
+    app.getPastGames();
 });
 
 // ============= MODAL INSTANCE CONTROLLERS =====================
@@ -85,6 +92,8 @@ app.controller('CreateModalCtrl', function ($http, $location, $uibModalInstance,
                     createModal.displayMessage,
                     createModal.displayMessage
                 );
+
+                setTimeout(location.reload.bind(location), 2500);
             }
         };
 
@@ -139,7 +148,9 @@ app.controller('PlayModalCtrl', function ($http, $location, $uibModalInstance, $
                     playModal.displayMessage,
                     playModal.displayMessage
                 );
-//            }
+
+                setTimeout(location.reload.bind(location), 2500);
+//                }
         };
 
     playModal.displayMessage = (message) => {

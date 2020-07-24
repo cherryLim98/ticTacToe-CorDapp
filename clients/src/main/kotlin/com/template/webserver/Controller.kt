@@ -64,16 +64,15 @@ class Controller(rpc: NodeRPCConnection) {
     fun getActiveGames() : ResponseEntity<List<StateAndRef<BoardState>>> {
         return ResponseEntity.ok(proxy.vaultQueryBy<BoardState>().states)
     }
-/*
+
     /**
      * Display all past games this player has played i.e. states that have been taken off ledger
      */
-    @GetMapping(value = ["past-games"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping(value = ["pastGames"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getPastStates(): ResponseEntity<List<StateAndRef<BoardState>>> {
         val criteriaByStateStatus = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.CONSUMED)
         return ResponseEntity.ok(proxy.vaultQueryBy<BoardState>(criteriaByStateStatus).states.filter { it.state.data.outcome != "game still in progress" })
     }
-    */
 
     @PostMapping(value = [ "createGame" ], produces = [ TEXT_PLAIN_VALUE ], headers = [ "Content-Type=application/x-www-form-urlencoded" ])
     fun createGame(request: HttpServletRequest): ResponseEntity<String> {
@@ -101,7 +100,7 @@ class Controller(rpc: NodeRPCConnection) {
         val opponent = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(opponentString)) ?: throw IllegalArgumentException("Unknown party name.")
         return try {
             proxy.startFlow(::PlayFlow, opponent, pos).returnValue.get()
-            ResponseEntity.status(HttpStatus.CREATED).body("You played the position ($pos) against ${opponent.name.commonName}.")
+            ResponseEntity.status(HttpStatus.CREATED).body("You played the position ($pos) against ${opponent.name}.")
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         }
